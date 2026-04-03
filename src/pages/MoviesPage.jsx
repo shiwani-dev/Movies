@@ -21,8 +21,25 @@ export default function MoviesPage() {
   // cache
   const cache = useRef({});
 
+  // recent searches
+  const [recentSearches, setRecentSearches] = useState(() => {
+    const saved = localStorage.getItem("recentSearches");
+    return saved ? JSON.parse(saved) : [];
+  });
+
   useEffect(() => {
     setPage(1);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    if (debouncedSearch.trim()) {
+      setRecentSearches((prev) => {
+        const updated = [debouncedSearch, ...prev.filter(s => s !== debouncedSearch)];
+        const limited = updated.slice(0, 5); // keep last 5
+        localStorage.setItem("recentSearches", JSON.stringify(limited));
+        return limited;
+      });
+    }
   }, [debouncedSearch]);
 
   useEffect(() => {
@@ -55,7 +72,7 @@ export default function MoviesPage() {
               index === self.findIndex((m) => m.imdbID === movie.imdbID)
           );
           setMovies(uniqueMovies);
-          cache.current[cacheKey] = uniqueMovies; 
+          cache.current[cacheKey] = uniqueMovies;
           setError("");
         } else {
           setMovies([]);
@@ -74,17 +91,44 @@ export default function MoviesPage() {
 
   return (
     <div className="min-h-screen bg-slate-100">
-      <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">
-            Movie Finder
-          </h1>
-          <p className="mt-2 text-sm text-slate-600">
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <div className="mb-8 rounded-2xl bg-white p-6 shadow-sm ring-1 ring-slate-200">
+     <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+          Movie Finder
+      </h1>
+       <p className="mt-2 text-sm text-slate-600">
             Search movies and watch for free.
-          </p>
+       </p>
           <div className="mt-6">
             <SearchBar search={search} setSearch={setSearch} />
           </div>
+
+      {/* Recent Searches */}
+      {recentSearches.length > 0 && (
+        <div className="mt-4">
+        <h2 className="text-sm font-semibold text-slate-700">Recent Searches:</h2>
+        <div className="flex flex-wrap gap-2 mt-2">
+                {recentSearches.map((term, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setSearch(term)}
+                    className="px-3 py-1 text-sm hover:bg-slate-300"
+                  >
+                    {term}
+                  </button>
+                ))}
+                <button
+                  onClick={() => {
+                    setRecentSearches([]);
+                    localStorage.removeItem("recentSearches");
+                  }}
+                  className="px-3 py-1 text-sm hover:bg-red-300"
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Skeletons */}
@@ -102,6 +146,7 @@ export default function MoviesPage() {
             {error}
           </div>
         )}
+
         {!loading && !error && !showSkeleton && movies.length > 0 && (
           <Suspense
             fallback={
