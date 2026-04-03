@@ -55,7 +55,7 @@ export default function MoviesPage() {
               index === self.findIndex((m) => m.imdbID === movie.imdbID)
           );
           setMovies(uniqueMovies);
-          cache.current[cacheKey] = uniqueMovies; // store in cache
+          cache.current[cacheKey] = uniqueMovies; 
           setError("");
         } else {
           setMovies([]);
